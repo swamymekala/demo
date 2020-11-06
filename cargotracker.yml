@@ -1,0 +1,29 @@
+- hosts: SIT1
+  become: yes
+  become_user: root
+  become_method : enable
+  vars:
+  - warName: cargo-tracker.war
+  - warRemotePath: /var/lib/tomcat9/webapps/sample/
+  - warLocalPath: /var/lib/jenkins/workspace/JenkinsNexus/target/
+  tasks:
+  - name: Download WAR to server
+    get_url:
+     url: http://192.168.12.112:8081/repository/maven-nexus-repo/net/java/cargo-tracker/1.0-SNAPSHOT/cargo-tracker-1.0-20201104.102504-1.war
+     url_password: ncodeit123
+     url_username: admin
+     dest: /var/lib/tomcat9/webapps/sample/
+  - name: Unzip WAR file
+    unarchive:
+      src: /var/lib/tomcat9/webapps/sample/cargo-tracker-1.0-20201104.102504-1.war
+      dest: /var/lib/tomcat9/webapps/sample/
+      remote_src: yes
+    notify:
+        - Restart tomcat9
+
+  - name: Delete remote war file
+    file: path={{ warRemotePath }}/{{ warName }} state=absent
+
+  handlers:
+    - name: Restart tomcat9
+      service: name=tomcat9 state=restarted
